@@ -53,7 +53,7 @@ contract Bank {
     function withdraw(uint _accountId, uint256 _amount) public onlyOwner(_accountId) payable {
         Account memory _account = getAccount(_accountId);
 
-        require(_account.amount > _amount, "Don't enought found");
+        require(_account.amount > _amount, "Don't have enought found");
 
         IERC20Token(cUsdTokenAddress).transfer(_account.owner, _amount);
 
