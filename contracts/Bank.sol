@@ -66,12 +66,11 @@ contract Bank {
         string memory _accountName,
         string memory _accountDescription,
         uint _locktime,
-        uint _accountId,
-        address _owner
-        ) public {
+        uint _accountId
+        ) public returns (bool) {
 
             accounts[_accountId] = Account(
-                payable(_owner),
+                payable(msg.sender),
                 _accountName,
                 _accountDescription,
                 0,
@@ -80,7 +79,9 @@ contract Bank {
             );
 
             totalAccount++;
-        }
+
+        return true;
+    }
 
     function deleteAccount(uint _accountId) public onlyOwner(_accountId) returns (bool) {
         Account memory _account = getAccount(_accountId);
