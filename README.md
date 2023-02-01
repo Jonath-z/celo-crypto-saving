@@ -1,1 +1,1 @@
-# celo-crypto-bank
+# celo-crypto-bank-contract
