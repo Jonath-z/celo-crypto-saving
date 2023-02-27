@@ -127,7 +127,7 @@ contract Bank {
        return contractOwner;
     }
 
-    function getAccount(uint _accountId) internal view returns (Account memory _account) {
+    function getAccount(uint _accountId) public view returns (Account memory _account) {
        return (accounts[_accountId]);
     }
 }
