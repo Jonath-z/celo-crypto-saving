@@ -39,7 +39,7 @@ contract Bank {
 
     function canWithdraw(uint _accountId) internal view returns(bool){
        Account memory _account = getAccount(_accountId);
-       if(msg.sender == _account.owner &&  block.timestamp >= _account.lockTime){
+       if(block.timestamp >= _account.lockTime){
         return true;
        }else{
         return false;
