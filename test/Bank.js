@@ -39,9 +39,9 @@ describe("Bank", function () {
 
   it("Should make a deposit", async function () {
     const depositAmount = ethers.utils.parseEther("1");
-    const depositReceipt = await bank.deposit(depositAmount, 2390);
+    const depositTx = await bank.deposit(depositAmount, 2390);
 
-    const txReceipt = await depositReceipt.wait();
+    const txReceipt = await depositTx.wait();
     expect(depositAmount).to.equal(txReceipt.events[0].args[0]);
   });
 });
