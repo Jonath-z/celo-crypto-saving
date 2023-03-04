@@ -48,10 +48,6 @@ contract Bank {
     function deposit(uint256 _amount, uint _accountId) public payable {
         address _depositAddress = payable(msg.sender);
 
-        uint256 _accountBalance = IERC20Token(cUsdTokenAddress).balanceOf(_depositAddress);
-
-        require(_accountBalance > _amount);
-
         Account memory _account = getAccount(_accountId);
 
         uint256 _newBalance = _account.amount + _amount;
@@ -82,7 +78,6 @@ contract Bank {
     function createAccount(
         string memory _accountName,
         string memory _accountDescription,
-        uint _locktime,
         uint _accountId
         ) public returns (bool) {
 
@@ -91,7 +86,7 @@ contract Bank {
                 _accountName,
                 _accountDescription,
                 0,
-                _locktime,
+                0,
                 _accountId
             );
 
