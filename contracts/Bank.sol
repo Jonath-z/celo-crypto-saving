@@ -30,6 +30,7 @@ contract Bank {
 
     event newDeposit (uint256 amount, uint time, address owner, string accountName);
     event newWithdraw(uint256 amount,uint256 newBalance, address owner, string accoutName);
+    event locked(Account account);
 
     modifier onlyOwner(uint _accountId){
         require(getAccount(_accountId).owner == msg.sender);
@@ -95,10 +96,11 @@ contract Bank {
         return true;
     }
 
-    function lockAccount(uint _accountId, uint256 _timestamp) public view{
+    function lockAccount(uint _accountId, uint256 _timestamp) public{
         require(block.timestamp < _timestamp, "lock time should be in the future");
         Account memory _account = getAccount(_accountId);
         _account.lockTime = _timestamp;
+        emit locked(_account);
     }
 
     function deleteAccount(uint _accountId) public onlyOwner(_accountId) returns (bool) {
