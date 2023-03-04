@@ -33,12 +33,12 @@ contract Bank {
     event locked(Account account);
 
     modifier onlyOwner(uint _accountId){
-        require(getAccount(_accountId).owner == msg.sender);
+        require(accounts[_accountId].owner == msg.sender);
         _;
     }
 
     function canWithdraw(uint _accountId) internal view returns(bool){
-       Account memory _account = getAccount(_accountId);
+       Account memory _account = accounts[_accountId];
        if(block.timestamp >= _account.lockTime){
         return true;
        }else{
@@ -49,7 +49,7 @@ contract Bank {
     function deposit(uint256 _amount, uint _accountId) public payable {
         address _depositAddress = payable(msg.sender);
 
-        Account memory _account = getAccount(_accountId);
+        Account storage _account = accounts[_accountId];
 
         uint256 _newBalance = _account.amount + _amount;
         
@@ -59,7 +59,7 @@ contract Bank {
     }
 
     function withdraw(uint _accountId, uint256 _amount) public onlyOwner(_accountId) payable {
-        Account memory _account = getAccount(_accountId);
+        Account storage _account = accounts[_accountId];
 
         require(_account.amount > _amount, "Don't have enought found");
 
@@ -98,13 +98,13 @@ contract Bank {
 
     function lockAccount(uint _accountId, uint256 _timestamp) public{
         require(block.timestamp < _timestamp, "lock time should be in the future");
-        Account memory _account = getAccount(_accountId);
+        Account storage _account = accounts[_accountId];
         _account.lockTime = _timestamp;
         emit locked(_account);
     }
 
     function deleteAccount(uint _accountId) public onlyOwner(_accountId) returns (bool) {
-        Account memory _account = getAccount(_accountId);
+        Account storage _account = accounts[_accountId];
 
         if(_account.amount != 0){
            return false;
