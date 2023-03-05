@@ -29,8 +29,13 @@ contract Bank is ReentrancyGuard {
     event newWithdraw(uint256 amount,uint256 newBalance, address owner, string accoutName);
     event locked(Account account);
 
-    modifier onlyOwner(uint _accountId){
+    modifier onlyAccountOwner(uint _accountId){
         require(accounts[_accountId].owner == msg.sender);
+        _;
+    }
+
+    modifier onlyContractOwner(){
+        require(msg.sender == contractOwner);
         _;
     }
 
@@ -56,7 +61,7 @@ contract Bank is ReentrancyGuard {
         emit newDeposit(_amount, _account.lockTime, _depositAddress, _account.accountName);
     }
 
-    function withdraw(uint _accountId, uint256 _amount) public onlyOwner(_accountId) payable {
+    function withdraw(uint _accountId, uint256 _amount) public onlyAccountOwner(_accountId) payable {
         Account storage _account = accounts[_accountId];
         require(_account.amount > _amount, "Don't have enought found");
         require(lockTimeExpired(_accountId), "Can not withdraw, account is still locked");
@@ -99,7 +104,7 @@ contract Bank is ReentrancyGuard {
         emit locked(_account);
     }
 
-    function deleteAccount(uint _accountId) public onlyOwner(_accountId) returns (bool) {
+    function deleteAccount(uint _accountId) public onlyAccountOwner(_accountId) returns (bool) {
         Account storage _account = accounts[_accountId];
 
         if(_account.amount != 0){
@@ -124,7 +129,8 @@ contract Bank is ReentrancyGuard {
        return (accounts[_accountId]);
     }
 
-    function getBankBalance() public view returns(uint256){
+    function getBankBalance() public onlyContractOwner view returns(uint256){
+        require(msg.sender == contractOwner, "only the contract");
         return address(this).balance;
     }
 }
