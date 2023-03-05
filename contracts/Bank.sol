@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.7.0 <0.9.0;
 
-interface IERC20Token {
-    function balanceOf(address) external view returns (uint256);
-    function transfer(address, uint256) external returns (bool);
-}
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Bank {
+contract Bank is ReentrancyGuard {
 
     address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     address payable public contractOwner;
     uint public totalAccount = 0;
     uint256 public commisson = 0; // in pourcentage 
 
-    constructor(address payable _contractOwner){
+    constructor(address payable _contractOwner) {
         contractOwner = _contractOwner;
     }
 
@@ -37,7 +34,7 @@ contract Bank {
         _;
     }
 
-    function canWithdraw(uint _accountId) internal view returns(bool){
+    function lockTimeExpired(uint _accountId) internal view returns(bool){
        Account memory _account = accounts[_accountId];
        if(block.timestamp >= _account.lockTime){
         return true;
@@ -46,8 +43,9 @@ contract Bank {
        }
     }
 
-    function deposit(uint256 _amount, uint _accountId) public payable {
+    function deposit(uint _accountId) public payable {
         address _depositAddress = payable(msg.sender);
+        uint256 _amount = msg.value;
 
         Account storage _account = accounts[_accountId];
 
@@ -60,20 +58,18 @@ contract Bank {
 
     function withdraw(uint _accountId, uint256 _amount) public onlyOwner(_accountId) payable {
         Account storage _account = accounts[_accountId];
-
         require(_account.amount > _amount, "Don't have enought found");
+        require(lockTimeExpired(_accountId), "Can not withdraw, account is still locked");
 
-        if(canWithdraw(_accountId)){
-            uint256 _commissonAmount = (_amount * commisson) / 100;
-            uint256 _amountToWithdraw = _amount - _commissonAmount;
+        uint256 _commissonAmount = (_amount * commisson) / 100;
+        uint256 _amountToWithdraw = _amount - _commissonAmount;
 
-            IERC20Token(cUsdTokenAddress).transfer(_account.owner, _amountToWithdraw);
-            IERC20Token(cUsdTokenAddress).transfer(contractOwner, _commissonAmount);
+        payable(_account.owner).transfer(_amountToWithdraw);
+        payable(contractOwner).transfer(_commissonAmount);
 
-            uint256 _newBalance = _account.amount - _amountToWithdraw;
-            _account.amount = _newBalance;
-            emit newWithdraw(_amount, _account.amount, _account.owner, _account.accountName);
-        }
+        uint256 _newBalance = _account.amount - _amountToWithdraw;
+        _account.amount = _newBalance;
+        emit newWithdraw(_amount, _account.amount, _account.owner, _account.accountName);
     }
 
     function createAccount(
@@ -126,5 +122,9 @@ contract Bank {
 
     function getAccount(uint _accountId) public view returns (Account memory _account) {
        return (accounts[_accountId]);
+    }
+
+    function getBankBalance() public view returns(uint256){
+        return address(this).balance;
     }
 }
