@@ -4,8 +4,6 @@ pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Bank is ReentrancyGuard {
-
-    address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     address payable public contractOwner;
     uint public totalAccount = 0;
     uint256 public commisson = 0; // in pourcentage 
@@ -116,8 +114,7 @@ contract Bank is ReentrancyGuard {
         return true;
     }
 
-    function updateCommission(uint256 newCommission) public {
-        require(msg.sender == contractOwner, "Only the owner of this contract can update the commission");
+    function updateCommission(uint256 newCommission) public onlyContractOwner {
         commisson = newCommission;
     }
 
@@ -130,7 +127,6 @@ contract Bank is ReentrancyGuard {
     }
 
     function getBankBalance() public onlyContractOwner view returns(uint256){
-        require(msg.sender == contractOwner, "only the contract");
         return address(this).balance;
     }
 }
