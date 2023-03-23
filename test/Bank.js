@@ -48,6 +48,7 @@ describe("Bank", function () {
       value: depositAmount,
     });
     const txReceipt = await depositTx.wait();
+
     expect(depositAmount).to.equal(txReceipt.events[0].args[0]);
   });
 
@@ -77,5 +78,9 @@ describe("Bank", function () {
     const lock = await bank.lockAccount(TEST_ACCOUNT_ID, lockTimstamp);
     const txLock = await lock.wait();
     expect(lockTimstamp).to.equal(txLock.events[0].args[0].lockTime);
+  });
+
+  it("Should delete the account", async function () {
+    await bank.deleteAccount(TEST_ACCOUNT_ID);
   });
 });
