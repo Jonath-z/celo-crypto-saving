@@ -6,12 +6,11 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract Bank is ReentrancyGuard {
     address payable public contractOwner;
     uint256 public totalAccount = 0;
-    uint256 public commisson = 0; // in pourcentage
+    uint256 public commission = 0;  // in pourcentage
 
     constructor(address payable _contractOwner) {
         contractOwner = _contractOwner;
     }
-
 
     struct Account {
         address payable owner;
@@ -30,6 +29,7 @@ contract Bank is ReentrancyGuard {
         address owner,
         string accountName
     );
+
     event newWithdraw(
         uint256 amount,
         uint256 newBalance,
@@ -88,11 +88,11 @@ contract Bank is ReentrancyGuard {
             "Can not withdraw, account is still locked"
         );
 
-        uint256 _commissonAmount = (_amount * commisson) / 100;
-        uint256 _amountToWithdraw = _amount - _commissonAmount;
+        uint256 _commissionAmount = (_amount * commission) / 100;
+        uint256 _amountToWithdraw = _amount - _commissionAmount;
 
         payable(_account.owner).transfer(_amountToWithdraw);
-        payable(contractOwner).transfer(_commissonAmount);
+        payable(contractOwner).transfer(_commissionAmount);
 
         uint256 _newBalance = _account.amount - _amountToWithdraw;
         _account.amount = _newBalance;
@@ -138,17 +138,15 @@ contract Bank is ReentrancyGuard {
     ) public onlyAccountOwner(_accountId) returns (bool deleted) {
         Account storage _account = accounts[_accountId];
 
-        if (_account.amount != 0) {
-            return deleted = false;
-        }
+        require(_account.amount == 0, "Can not delete an account with found");
 
         delete accounts[_accountId];
-        totalAccount = totalAccount - 1;
+        totalAccount--;
         return deleted = true;
     }
 
     function updateCommission(uint256 newCommission) public onlyContractOwner {
-        commisson = newCommission;
+        commission = newCommission;
     }
 
     function getContractOwner() public view returns (address) {
