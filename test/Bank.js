@@ -4,6 +4,22 @@ const moment = require("moment");
 
 const TEST_ACCOUNT_ID = 2390;
 
+async function createAccount(bank) {
+  const account = {
+    accountName: "Celo Bank",
+    description: "Safe and decentralized bank",
+    accountId: TEST_ACCOUNT_ID,
+  };
+  await bank.createAccount(
+    account.accountName,
+    account.description,
+    account.accountId
+  );
+  const accountCreated = await bank.getAccount(TEST_ACCOUNT_ID);
+
+  return { accountCreated, account };
+}
+
 describe("Bank", function () {
   let bank, bank_owner;
 
@@ -19,19 +35,13 @@ describe("Bank", function () {
     expect(bank_owner).to.be.equal(contractOwner);
   });
 
-  it("Should create & get the account", async function () {
-    const account = {
-      accountName: "Celo Bank",
-      description: "Safe and decentralized bank",
-      accountId: TEST_ACCOUNT_ID,
-    };
-    await bank.createAccount(
-      account.accountName,
-      account.description,
-      account.accountId
-    );
-    const accountCreated = await bank.getAccount(TEST_ACCOUNT_ID);
+  it("Should get the total account number", async function () {
+    const totalAccounts = await bank.totalAccount();
+    expect(totalAccounts).to.be.equal(0);
+  });
 
+  it("Should create & get the account", async function () {
+    const { accountCreated, account } = await createAccount(bank);
     expect(accountCreated.owner).to.equal(bank_owner);
     expect(accountCreated.name).to.equal(account.name);
     expect(accountCreated.description).to.equal(account.description);
@@ -40,7 +50,14 @@ describe("Bank", function () {
     expect(accountCreated.lockTime).to.equal(0);
   });
 
+  it("Should delete the account", async function () {
+    await bank.deleteAccount(TEST_ACCOUNT_ID);
+    const totalAccount = await bank.totalAccount();
+    expect(totalAccount).to.be.equal(0);
+  });
+
   it("Should make a deposit", async function () {
+    await createAccount(bank);
     const depositAmount = ethers.utils.parseEther("1");
 
     // deposit requires the account id and the the value to deposit
@@ -80,7 +97,10 @@ describe("Bank", function () {
     expect(lockTimstamp).to.equal(txLock.events[0].args[0].lockTime);
   });
 
-  it("Should delete the account", async function () {
-    await bank.deleteAccount(TEST_ACCOUNT_ID);
+  it("Should set the commission", async function () {
+    const commission = 5; // 5%
+    await bank.updateCommission(commission);
+    const newCommission = await bank.commission();
+    expect(newCommission).to.be.equal(commission);
   });
 });
