@@ -4,14 +4,6 @@ pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Bank is ReentrancyGuard {
-    address payable public contractOwner;
-    uint256 public totalAccount = 0;
-    uint256 public commission = 0;  // in pourcentage
-
-    constructor(address payable _contractOwner) {
-        contractOwner = _contractOwner;
-    }
-
     struct Account {
         address payable owner;
         string accountName;
@@ -21,15 +13,12 @@ contract Bank is ReentrancyGuard {
         uint accountId;
     }
 
-    mapping(uint => Account) public accounts;
-
     event newDeposit(
         uint256 amount,
         uint time,
         address owner,
         string accountName
     );
-
     event newWithdraw(
         uint256 amount,
         uint256 newBalance,
@@ -37,6 +26,17 @@ contract Bank is ReentrancyGuard {
         string accoutName
     );
     event locked(Account account);
+
+    mapping(uint => Account) public accounts;
+
+    address payable public immutable contractOwner;
+    uint256 public totalAccount = 0;
+    uint256 public commission = 0;  // in pourcentage
+
+
+    constructor() {
+        contractOwner = payable(msg.sender);
+    }
 
     /**
      * Modifier assuring the access to only the account owner
@@ -70,30 +70,43 @@ contract Bank is ReentrancyGuard {
     }
 
     /**
+     * @param _accountName - The name of the account 
+     * @param _accountDescription - The description of the account
+     * @return true
+     */
+    function createAccount(
+        string memory _accountName,
+        string memory _accountDescription
+    ) public returns (bool) {
+        // Increment the number if the accounts created
+        totalAccount++;
+        // Create the account Structure and add it the mapping
+        accounts[totalAccount] = Account(
+            payable(msg.sender),
+            _accountName,
+            _accountDescription,
+            0,
+            0,
+            totalAccount
+        );
+        return true;
+    }
+
+    /**
      * Make deposit into an account
      * @param _accountId - Account id in which the deposit will be made
      */
     function deposit(uint _accountId) public payable {
-        // Get the account Address that is making the deposit.
-        address _depositAddress = payable(msg.sender);
-
-        // Get the amount to save.
-        uint256 _amount = msg.value;
-
+        require(msg.value > 0, "Not enough funds to make a deposit");
         // Get the account in which the deposit will be made.
         Account storage _account = accounts[_accountId];
-
-        // Calculate the new balance of the account.
-        uint256 _newBalance = _account.amount + _amount;
-
         // Update the account amount to the new balance.
-        _account.amount = _newBalance;
-
+        _account.amount += msg.value;
         // Emit the new deposit event.
         emit newDeposit(
-            _amount,
+            msg.value,
             _account.lockTime,
-            _depositAddress,
+            _account.owner,
             _account.accountName
         );
     }
@@ -112,12 +125,12 @@ contract Bank is ReentrancyGuard {
         Account storage _account = accounts[_accountId];
 
         // Check if the account balance is greater than the amount to withdraw.
-        require(_account.amount > _amount, "Don't have enought found");
+        require(_account.amount > _amount, "Don't have enough funds");
 
         // Check if the account is not locked
         require(
             lockTimeExpired(_accountId),
-            "Can not withdraw, account is still locked"
+            "Can not withdraw, the account is locked"
         );
 
         // Calulate the commission amount.
@@ -125,18 +138,15 @@ contract Bank is ReentrancyGuard {
 
         // Calculate the amount to withdraw.
         uint256 _amountToWithdraw = _amount - _commissionAmount;
+        
+        // Update the account balance
+        _account.amount = _account.amount - (_amountToWithdraw + _commissionAmount);
 
         // Send the amount to withdraw to the account owner.
         payable(_account.owner).transfer(_amountToWithdraw);
 
         // Send the commission to the contract owner.
         payable(contractOwner).transfer(_commissionAmount);
-
-        // Calculate the new balance.
-        uint256 _newBalance = _account.amount - _amountToWithdraw;
-        
-        // Update the account balance
-        _account.amount = _newBalance;
 
         // Emit the withdraw Event
         emit newWithdraw(
@@ -145,33 +155,6 @@ contract Bank is ReentrancyGuard {
             _account.owner,
             _account.accountName
         );
-    }
-
-    /**
-     * @param _accountName - The name of the account 
-     * @param _accountDescription - The description of the account
-     * @param _accountId - The account id
-     * @return true
-     */
-    function createAccount(
-        string memory _accountName,
-        string memory _accountDescription,
-        uint _accountId
-    ) public returns (bool) {
-        // Create the account Structure and add it the mapping
-        accounts[_accountId] = Account(
-            payable(msg.sender),
-            _accountName,
-            _accountDescription,
-            0,
-            0,
-            _accountId
-        );
-
-        // Increment the number if the accounts created
-        totalAccount++;
-
-        return true;
     }
 
     /**
@@ -187,7 +170,7 @@ contract Bank is ReentrancyGuard {
         Account storage _account = accounts[_accountId];
         
         // Update the lock time.
-        _account.lockTime = _timestamp;
+        _account.lockTime = block.timestamp + _timestamp;
 
         // Emit the lock event.
         emit locked(_account);
@@ -199,19 +182,11 @@ contract Bank is ReentrancyGuard {
      */
     function deleteAccount(
         uint _accountId
-    ) public onlyAccountOwner(_accountId) returns (bool deleted) {
-        // Get the account to delete.
-        Account storage _account = accounts[_accountId];
-        
+    ) public onlyAccountOwner(_accountId) returns (bool deleted) {        
         // Check if the account balance is 0.
-        require(_account.amount == 0, "Can not delete an account with found");
-
-        // Delete the account.
+        require(accounts[_accountId].amount == 0, "Can not delete an account with found");
         delete accounts[_accountId];
-
-        // Decrement the number of the account created.
         totalAccount--;
-
         return deleted = true;
     }
 
@@ -221,13 +196,6 @@ contract Bank is ReentrancyGuard {
      */
     function updateCommission(uint256 newCommission) public onlyContractOwner {
         commission = newCommission;
-    }
-
-    /**
-     * @return {Address} - the contract owner address
-     */
-    function getContractOwner() public view returns (address) {
-        return contractOwner;
     }
 
     /**
