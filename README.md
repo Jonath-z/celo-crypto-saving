@@ -10,6 +10,7 @@ This project is a decentralized savings bank that enables users to open savings 
 
 ## Test the contract locally
 
+The contract is deployed to celo test network.
 To test the contract locally, follow the following steps:
 
 1.Clone the repository
