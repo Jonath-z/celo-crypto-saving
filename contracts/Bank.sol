@@ -29,13 +29,13 @@ contract Bank is ReentrancyGuard {
 
     mapping(uint => Account) public accounts;
 
-    address payable public immutable contractOwner;
-    uint256 public totalAccount = 0;
-    uint256 public commission = 0;  // in pourcentage
+    address payable public immutable i_contractOwner;
+    uint256 public s_totalAccount;
+    uint256 public s_commission;  // in pourcentage
 
 
     constructor() {
-        contractOwner = payable(msg.sender);
+        i_contractOwner = payable(msg.sender);
     }
 
     /**
@@ -51,7 +51,7 @@ contract Bank is ReentrancyGuard {
      * Modifier assuring the access to only the contract owner
      */
     modifier onlyContractOwner() {
-        require(msg.sender == contractOwner);
+        require(msg.sender == i_contractOwner);
         _;
     }
 
@@ -78,16 +78,15 @@ contract Bank is ReentrancyGuard {
         string memory _accountName,
         string memory _accountDescription
     ) public returns (bool) {
-        // Increment the number if the accounts created
-        totalAccount++;
+        s_totalAccount++;
         // Create the account Structure and add it the mapping
-        accounts[totalAccount] = Account(
+        accounts[s_totalAccount] = Account(
             payable(msg.sender),
             _accountName,
             _accountDescription,
             0,
             0,
-            totalAccount
+            s_totalAccount
         );
         return true;
     }
@@ -134,7 +133,7 @@ contract Bank is ReentrancyGuard {
         );
 
         // Calulate the commission amount.
-        uint256 _commissionAmount = (_amount * commission) / 100;
+        uint256 _commissionAmount = (_amount * s_commission) / 100;
 
         // Calculate the amount to withdraw.
         uint256 _amountToWithdraw = _amount - _commissionAmount;
@@ -146,7 +145,7 @@ contract Bank is ReentrancyGuard {
         payable(_account.owner).transfer(_amountToWithdraw);
 
         // Send the commission to the contract owner.
-        payable(contractOwner).transfer(_commissionAmount);
+        payable(i_contractOwner).transfer(_commissionAmount);
 
         // Emit the withdraw Event
         emit newWithdraw(
@@ -186,7 +185,7 @@ contract Bank is ReentrancyGuard {
         // Check if the account balance is 0.
         require(accounts[_accountId].amount == 0, "Can not delete an account with found");
         delete accounts[_accountId];
-        totalAccount--;
+        s_totalAccount--;
         return deleted = true;
     }
 
@@ -195,7 +194,7 @@ contract Bank is ReentrancyGuard {
      * @param newCommission - New commission value
      */
     function updateCommission(uint256 newCommission) public onlyContractOwner {
-        commission = newCommission;
+        s_commission = newCommission;
     }
 
     /**
