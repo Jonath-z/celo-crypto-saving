@@ -114,42 +114,32 @@ contract Bank is ReentrancyGuard {
      * Perform a widthraw. 
      * Can only be called by the account owner.
      * @param _accountId - The account from which the withdrawal will be made.
-     * @param _amount - The amount to withdraw.
+     * @param _amountToWithdraw - The amount to withdraw.
      */
     function withdraw(
         uint _accountId,
-        uint256 _amount
+        uint256 _amountToWithdraw
     ) public payable onlyAccountOwner(_accountId) {
         // Get the account from which the withdraw will be made.
         Account storage _account = accounts[_accountId];
-
-        // Check if the account balance is greater than the amount to withdraw.
-        require(_account.amount > _amount, "Don't have enough funds");
 
         // Check if the account is not locked
         require(
             lockTimeExpired(_accountId),
             "Can not withdraw, the account is locked"
         );
-
         // Calulate the commission amount.
-        uint256 _commissionAmount = (_amount * s_commission) / 100;
-
-        // Calculate the amount to withdraw.
-        uint256 _amountToWithdraw = _amount - _commissionAmount;
-        
+        uint256 _commissionAmount = (_amountToWithdraw * s_commission) / 100;
+        require(_account.amount > (_commissionAmount + _amountToWithdraw), "Not have enough funds to withdraw");
         // Update the account balance
-        _account.amount = _account.amount - (_amountToWithdraw + _commissionAmount);
-
+        _account.amount -= (_amountToWithdraw + _commissionAmount);
         // Send the amount to withdraw to the account owner.
         payable(_account.owner).transfer(_amountToWithdraw);
-
         // Send the commission to the contract owner.
         payable(i_contractOwner).transfer(_commissionAmount);
-
         // Emit the withdraw Event
         emit newWithdraw(
-            _amount,
+            _amountToWithdraw,
             _account.amount,
             _account.owner,
             _account.accountName

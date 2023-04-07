@@ -1,9 +1,8 @@
-const hre = require("hardhat");
-const CONTRACT_DEPLOYER = process.env.CONTRACT_OWNER;
+import hre from "hardhat";
 
 async function main() {
   const Bank = await hre.ethers.getContractFactory("Bank");
-  const bank = await Bank.deploy(CONTRACT_DEPLOYER);
+  const bank = await Bank.deploy();
   await bank.deployed();
 
   console.log("Contract deployed successfully");
