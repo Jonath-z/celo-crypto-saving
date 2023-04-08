@@ -5,7 +5,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Blinker", "sans-serif"],
+        sans: ["Noto", "sans-serif"],
+        Blinker: ["Blinker", "sans-serif"],
       },
     },
   },
