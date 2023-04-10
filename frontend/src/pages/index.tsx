@@ -1,4 +1,5 @@
 import Accounts from "@/components/Accounts";
+import WalletModal from "@/components/WalletModal";
 import Page from "@/components/layout/Page";
 import { Inter } from "next/font/google";
 
@@ -9,6 +10,7 @@ export default function Home() {
     <main>
       <Page>
         <Accounts />
+        <WalletModal />
       </Page>
     </main>
   );
